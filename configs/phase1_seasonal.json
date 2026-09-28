@@ -1,0 +1,24 @@
+{
+  "input_glob": "GP9_2023/*.csv",
+  "seasons": [
+    {"name": "summer_2022", "start": "2022-06-01", "end": "2022-08-31"},
+    {"name": "winter_2022_23", "start": "2022-12-01", "end": "2023-02-28"}
+  ],
+  "low_fraction": 0.35,
+  "min_peak_fraction": 0.75,
+  "following_hours": 8,
+  "duration_hours": [6, 8],
+  "development_fraction": 0.6666666667,
+  "minimum_coverage": 0.8,
+  "minimum_valid_days": 4,
+  "bootstrap_repetitions": 1000,
+  "split_seed": 42,
+  "test_fraction": 0.2,
+  "seeds": [1, 2, 3],
+  "latent_dim": 2,
+  "steps": 300,
+  "ae_steps": 500,
+  "infer_steps": 200,
+  "inducing_count": 32,
+  "torch_threads": 2
+}

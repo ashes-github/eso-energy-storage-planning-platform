@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eso-research"
+version = "0.1.0"
+description = "Reproducible GSP demand-pattern screening and latent model evaluation"
+requires-python = ">=3.10"
+dependencies = ["numpy", "pandas", "scipy>=1.14", "scikit-learn", "torch", "pyro-ppl", "matplotlib", "joblib", "geopandas", "tzdata"]
+
+[project.scripts]
+eso-phase1 = "eso.pipeline:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,52 @@
+# Python environments and bytecode
+venv/
+.venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+
+# Packaging and test/tool caches
+*.egg-info/
+build/
+dist/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Notebook autosaves (keep the research notebooks)
+.ipynb_checkpoints/
+
+# Downloaded datasets and derived historical data exports
+/Data/
+/GP9_2023/
+/experiments/small_data.csv
+/experiments/nonzero_gsps.csv
+
+# Generated experiment results, models, plots, and temporary files
+/output/
+/tmp/
+*.log
+
+# Local credentials (safe example environment files may be committed)
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Local editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo

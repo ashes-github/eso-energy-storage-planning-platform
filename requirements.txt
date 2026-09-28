@@ -1,0 +1,15 @@
+# Dependencies imported by GPLVM_with_clustering.ipynb
+dask[dataframe]
+geopandas
+matplotlib
+numpy
+pandas
+pyro-ppl
+scikit-learn
+ipykernel
+scipy>=1.14
+torch
+torchvision
+torchaudio
+joblib
+tzdata
