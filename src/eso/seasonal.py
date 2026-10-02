@@ -290,7 +290,7 @@ def benchmark(daily, profiles, aggregate, config, output):
         )
         target = future.loc[test_ids, :47].to_numpy()
         regime_dir = output / "models" / ("_".join(regime))
-        regime_dir.mkdir(parents=True)
+        regime_dir.mkdir(parents=True, exist_ok=True)
         (regime_dir / "split.json").write_text(
             json.dumps({"train_gsps": train_ids, "test_gsps": test_ids}, indent=2)
         )
@@ -326,7 +326,7 @@ def benchmark(daily, profiles, aggregate, config, output):
             test = scaler.transform(development.loc[test_ids].iloc[:, :width])
             observed = np.arange(width)
             repdir = regime_dir / representation
-            repdir.mkdir()
+            repdir.mkdir(parents=True, exist_ok=True)
             joblib.dump(scaler, repdir / "scaler.joblib")
             np.savez_compressed(repdir / "inputs.npz", train=train, test=test)
             for name in ["pca", "autoencoder", "gplvm"]:
