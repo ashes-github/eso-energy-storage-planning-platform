@@ -12,6 +12,16 @@ The default now retains **both import and export observations** as signed flows
 the previous 232-GSP result came from filtering out exports. See
 [flow correction and missing-data handling](docs/missing_data_handling.md).
 
+## Phase 2
+
+Phase 1 is **research-complete for now**. Battery dispatch simulation and multi-year
+validation are deferred extensions. The new [forecasting subsystem](docs/forecasting.md)
+provides an observed-data contract, three naive baselines, and expanding-window
+evaluation for 4-hour and day-ahead forecasts with a reserved final test period.
+
+See the [forecasting run guide](README_FORECASTING.md) for input preparation,
+PowerShell commands, validation/test runs, outputs and troubleshooting.
+
 ## Run
 
 From the project root using the existing Windows environment:
