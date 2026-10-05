@@ -137,6 +137,17 @@ of the older window-wide screening scores.
   `reference_week_comparison.csv`, `training_diagnostics.csv`, loss/latent plots
   and `RESULTS.md`. Main command creates weekly heatmaps and regime boxplots.
 
+Each seasonal GPLVM `gplvm_<seed>.npz` includes `latent_posterior_sd`, aligned
+with its training latent means in `latent` and `train_gsps` in the regime's
+`split.json`. The adjacent `gplvm_<seed>_latent_posterior_sd.csv` labels rows
+with training GSP IDs and columns with `z1_sd`, `z2_sd`, etc. These are
+variational posterior standard deviations of the **training latent variables**,
+in latent-coordinate units. Held-out GSP coordinates are optimized point
+estimates from `infer_decoder()`; no held-out latent posterior SDs are produced.
+The main `eso.pipeline` output `latent_posterior_sd.csv` has the same training-only
+interpretation. Existing saved seasonal runs require rerunning the models to
+produce these additional exports.
+
 Future extensions should add more years, spring/autumn, holiday/weather strata,
 masked-gap recurrence sensitivity and physical storage/dispatch validation.
 Threshold calibration needs separate evidence; selecting thresholds because

@@ -369,6 +369,19 @@ def benchmark(daily, profiles, aggregate, config, output):
                     z, recon, prediction, artifact = result[:4]
                     if not all(np.isfinite(x).all() for x in [z, recon, prediction]):
                         raise ValueError(f"Non-finite {name} output")
+                    uncertainty = {}
+                    if name == "gplvm":
+                        # Variational SDs belong to training GSPs in split order.
+                        # Held-out decoder inference produces point estimates only.
+                        sd = np.asarray(result[5])
+                        if sd.shape != z.shape or not np.isfinite(sd).all() or (sd < 0).any():
+                            raise ValueError("Invalid GPLVM latent posterior SD")
+                        uncertainty["latent_posterior_sd"] = sd
+                        pd.DataFrame(
+                            sd,
+                            index=pd.Index(train_ids, name="GSP Id"),
+                            columns=[f"z{i+1}_sd" for i in range(sd.shape[1])],
+                        ).to_csv(repdir / f"{name}_{seed}_latent_posterior_sd.csv")
                     raw = scaler.inverse_transform(prediction)[:, :48]
                     score(
                         name,
@@ -383,6 +396,7 @@ def benchmark(daily, profiles, aggregate, config, output):
                         latent=z,
                         prediction=raw,
                         losses=np.array(result[4] if len(result) > 4 else []),
+                        **uncertainty,
                     )
             pd.DataFrame(metrics).to_csv(output / "model_metrics.csv", index=False)
     pd.DataFrame(eligibility).to_csv(output / "model_eligibility.csv", index=False)

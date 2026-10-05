@@ -1,11 +1,13 @@
 import unittest
 import json
+import tempfile
+from unittest.mock import patch
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from eso.seasonal import (analyse_days, calendar_phase, daily_features,
+from eso.seasonal import (analyse_days, benchmark, calendar_phase, daily_features,
                           representative_inputs, summarize, utc_midnight)
 
 
@@ -24,6 +26,44 @@ def context(day='2022-06-10', low_hours=7):
 
 
 class SeasonalTests(unittest.TestCase):
+    def test_benchmark_exports_training_posterior_sd_in_split_order(self):
+        ids = [f'G{i}' for i in range(10)]
+        inputs = pd.DataFrame(np.arange(1010).reshape(10, 101), index=ids)
+        daily = pd.DataFrame({'season': ['summer'], 'day_type': ['weekday']})
+        aggregate = pd.DataFrame([
+            {'season': 'summer', 'day_type': 'weekday', 'GSP Id': g,
+             'phase': phase, 'evidence_status': 'sufficient'}
+            for g in ids for phase in ['development', 'holdout']
+        ])
+
+        def model(train, test, observed, *args):
+            z = np.zeros((len(train), 2))
+            sd = np.arange(len(train) * 2).reshape(z.shape) / 10 + 0.1
+            return z, train, test, {'latent_sd': sd}, [1.0], sd
+
+        config = dict(CONFIG, seeds=[7])
+        with tempfile.TemporaryDirectory() as tmp, \
+                patch('eso.seasonal.representative_inputs', return_value=inputs), \
+                patch('eso.seasonal.pca_model', side_effect=lambda *a: model(*a)[:4]), \
+                patch('eso.seasonal.autoencoder_model', side_effect=lambda *a: model(*a)[:5]), \
+                patch('eso.seasonal.gplvm_model', side_effect=model):
+            output = Path(tmp)
+            benchmark(daily, None, aggregate, config, output)
+            regime = output / 'models/summer_weekday'
+            train_ids = json.loads((regime / 'split.json').read_text())['train_gsps']
+            for representation in ['median48', 'median48_iqr48_behaviour5']:
+                repdir = regime / representation
+                csv = pd.read_csv(repdir / 'gplvm_7_latent_posterior_sd.csv', index_col=0)
+                self.assertEqual(csv.index.tolist(), train_ids)
+                self.assertEqual(csv.columns.tolist(), ['z1_sd', 'z2_sd'])
+                with np.load(repdir / 'gplvm_7.npz') as saved:
+                    np.testing.assert_allclose(saved['latent_posterior_sd'], csv.to_numpy())
+                    self.assertEqual(saved['latent_posterior_sd'].shape, saved['latent'].shape)
+                    self.assertEqual(len(saved['prediction']), len(ids) - len(train_ids))
+                for name in ['pca', 'autoencoder']:
+                    with np.load(repdir / f'{name}_7.npz') as saved:
+                        self.assertNotIn('latent_posterior_sd', saved.files)
+
     def test_cross_midnight_run_and_duration_sensitivity(self):
         y, times = context()
         f, p = daily_features(y, times, '2022-06-10', CONFIG)
