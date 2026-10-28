@@ -6,9 +6,12 @@ its profile-completion scores are not forecast accuracy scores.
 
 The initial Phase 2 subsystem lives in `src/eso/forecasting/`. It implements the
 observed-data contract, persistence, daily and weekly seasonal naive forecasts,
-expanding-window evaluation, and per-GSP and pooled MAE/RMSE/MASE. SARIMA/ETS,
-global boosted trees, global LSTM/GRU, intervals and detailed error slicing follow
-this foundation; no model superiority or operational accuracy is claimed yet.
+expanding-window evaluation, per-GSP/pooled/per-lead MAE/RMSE/MASE, common-case
+comparisons, and representative-series SARIMA/ETS benchmarks. See the
+[statistical forecasting review guide](statistical_forecasting.md) for model
+settings, failure policies, historical data and configuration-driven execution.
+Global boosted trees, LSTM/GRU and intervals remain later milestones; no model
+superiority or operational accuracy is claimed yet.
 
 ## Input and timing
 
@@ -73,15 +76,30 @@ $env:PYTHONPATH = 'src'
 
 The example boundary must be changed to a timestamp in your panel. Defaults need
 14 days of initial history, at least one full validation day, and one full test day.
+This is a software smoke minimum. The statistical study configuration requires
+180 initial days; prefer 6–12 months or more for the eventual modelling study.
+The CLI prints `smoke_benchmark` for histories shorter than 180 elapsed days and
+records the assessment in `run.json` under `training_history_assessment`. This
+also accounts for shorter SARIMA/ETS `train_window` settings. Longer histories
+are labelled `long_history_benchmark`; this describes duration only and does not
+establish adequate observed coverage, seasonal diversity or model quality.
+Prefer 1–2+ years where verified settlement coverage makes it practical.
 A five-day Phase 1 run is insufficient. Set `--min-train` and `--step` in half-hours.
 Use a new output directory for each run; existing directories are refused.
 
 Artifacts: `predictions.csv` (origin, target timestamp, lead, horizon, model, GSP,
 actual, prediction and training MASE scale), `metrics_per_gsp.csv`,
-`metrics_pooled.csv`, and `run.json` (split configuration and limitations).
+`metrics_pooled.csv`, `metrics_by_lead.csv`, `metrics_common_cases.csv`,
+`metrics_common_cases_by_lead.csv`, `series_selection.csv`, `config.json`,
+`run_status.json`, and `run.json` (configuration, hashes, versions and limitations).
+Statistical runs also produce `fit_diagnostics.csv` and optionally fitted models.
 Keep the source Phase 1 run alongside these artifacts for its revision/source audit.
 
-Next implement representative-series SARIMA/ETS, then a global tree model with
+The [feature foundation](forecasting_features.md) now provides origin-relative
+lags/rolling statistics, known-future local calendar features and purged training
+examples. ML fitting and fold-specific transformations remain to be implemented.
+
+Next implement a global tree model with
 GSP identity and origin-available lags/rolling features plus known future calendar
 features. Fit encoders/scalers only on training folds. Add a global sequence model,
 calibration-only intervals, seasonal/day-type/regime error slices, then join Phase 1

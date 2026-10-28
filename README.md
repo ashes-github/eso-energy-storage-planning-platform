@@ -18,6 +18,8 @@ Phase 1 is **research-complete for now**. Battery dispatch simulation and multi-
 validation are deferred extensions. The new [forecasting subsystem](docs/forecasting.md)
 provides an observed-data contract, three naive baselines, and expanding-window
 evaluation for 4-hour and day-ahead forecasts with a reserved final test period.
+Phase 2B adds representative-series SARIMA/ETS with per-lead and common-case
+evaluation; see the [statistical forecasting guide](docs/statistical_forecasting.md).
 
 See the [forecasting run guide](README_FORECASTING.md) for input preparation,
 PowerShell commands, validation/test runs, outputs and troubleshooting.

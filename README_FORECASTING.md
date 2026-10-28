@@ -2,8 +2,63 @@
 
 The Phase 2 pipeline runs **persistence, daily seasonal naive (48 steps), and weekly
 seasonal naive (336 steps)** with expanding-window evaluation. Every run evaluates
-both **4-hour (8-step)** and **day-ahead (48-step)** forecasts. SARIMA/ETS, tree models,
-LSTM/GRU and prediction intervals are not implemented yet.
+both **4-hour (8-step)** and **day-ahead (48-step)** forecasts. Tree models,
+LSTM/GRU and prediction intervals are not implemented yet. Representative-series
+SARIMA and additive ETS are now available through `--config configs/phase2_statistical.json`;
+see the [statistical review guide](docs/statistical_forecasting.md) for policies,
+180-day study settings and historical GP9 inputs. Global tree models remain deferred.
+The [forecast feature builder](docs/forecasting_features.md) now provides
+history-only lags/rolling statistics, future local calendar features and
+training examples with targets restricted to each fitting history, ready for ML integration.
+
+## Choose the run purpose
+
+Use an explicit configuration for repeatable runs:
+
+| Purpose | Configuration | Initial history | GSP sample |
+| --- | --- | --- | --- |
+| Pipeline check | `configs/phase2_pipeline_check.json` | 14 days / 672 half-hours | 3, spanning low/medium/high volume |
+| Forecasting comparison | `configs/phase2_forecasting_comparison.json` | 180 days / 8640 half-hours | 6, spanning low/medium/high volume |
+
+Both configurations run persistence, daily/weekly seasonal naive, SARIMA and ETS,
+with 4-hour and day-ahead horizons and weekly forecast origins. All models in a
+comparison receive the same folds and available history. The pipeline check caps
+SARIMA/ETS fitting at the latest 672 half-hours to keep checks inexpensive as
+origins advance. The comparison fits their entire expanding history. Its 180-day
+minimum is an approximate six-month starting floor; increase `min_train_days` to
+365 or 730 when verified settlement coverage supports a longer study.
+
+After preparing a panel, set `$forecastInput` to its directory and
+`$forecastTestStart` to your fixed timezone-aware test boundary, then choose:
+
+```powershell
+$env:PYTHONPATH = 'src'
+# Pipeline check: use a short full-calendar panel and a fresh output directory.
+.\venv\python.exe -m eso.forecasting.pipeline --config configs/phase2_pipeline_check.json --input $forecastInput --output output/phase2_pipeline_check_01 --test-start $forecastTestStart
+
+# Forecasting comparison: use a verified longer-history panel and a fresh output directory.
+.\venv\python.exe -m eso.forecasting.pipeline --config configs/phase2_forecasting_comparison.json --input $forecastInput --output output/phase2_comparison_validation_01 --test-start $forecastTestStart
+```
+
+Both commands default to validation. The comparison needs 180 initial days plus
+validation and reserved test windows; the existing 61-day panel cannot satisfy it.
+Run `--split test` only after freezing model choices, settings and the boundary.
+CLI `--min-train` and `--step` override configuration settings; omit them when
+using these presets as supplied. ML models remain a later implementation milestone.
+
+The earlier configs remain available: `phase2_baseline.json` checks the three
+naive baselines, and `phase2_statistical.json` has the same settings as the new
+forecasting-comparison preset.
+
+`configs/phase2_ml.json` is the starting preset for future ML incorporation. It
+currently matches the forecasting-comparison settings: 180 initial days, the same
+six-GSP sampling rule, weekly origins and both horizons. Running it today evaluates
+the five implemented baseline/statistical models listed in `models`. Add ML model
+names and feature/hyperparameter settings when their implementations and config
+validation support them. The strict loader currently rejects unsupported models
+and settings. When extending the preset, retain shared evaluation origins, targets
+and selected GSPs for comparisons, and fit feature transformations within each
+training fold. ML implementation remains deferred pending the statistical review.
 
 ## 1. Set up
 
@@ -46,6 +101,8 @@ fills are excluded from history and scoring targets.
 Use full-calendar panels, including weekends. Do not use median profiles,
 weekday-only panels, or join separate seasons across a time gap. Defaults require
 at least **16 elapsed days**: 14 training days, one validation day and one test day.
+The 14-day default is a software smoke minimum; the statistical study config uses
+180 days, with 6–12 months or more preferred where coverage permits.
 Longer validation and test periods are preferable for research. The default five-day
 Phase 1 output is too short.
 
@@ -160,7 +217,7 @@ and predictions. **Debug ESO Phase 1** remains the screening-pipeline configurat
 | `--input` | Required | Directory containing the input panel files. |
 | `--output` | Required | New directory for run artifacts. |
 | `--test-start` | Required | Timezone-aware first test interval, present in the panel. |
-| `--min-train` | `672` | Initial training length in half-hours (14 elapsed days). |
+| `--min-train` | `672` | Software smoke minimum: 14 elapsed days. Use at least 8640 half-hours (180 days) as the approximate six-month study floor; prefer 6–12 months or 1–2+ years where coverage permits. |
 | `--step` | `48` | Distance between origins in half-hours (24 elapsed hours). |
 | `--split` | `validation` | Evaluate `validation` or `test`. |
 

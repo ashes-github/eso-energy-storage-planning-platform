@@ -3,11 +3,14 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "eso-research"
+name = "eso-energy-storage-planning-platform"
 version = "0.1.0"
 description = "Reproducible GSP demand-pattern screening and latent model evaluation"
 requires-python = ">=3.10"
 dependencies = ["numpy", "pandas", "scipy>=1.14", "scikit-learn", "torch", "pyro-ppl", "matplotlib", "joblib", "geopandas", "tzdata"]
+
+[project.optional-dependencies]
+statistical = ["statsmodels>=0.14.6,<0.15"]
 
 [project.scripts]
 eso-phase1 = "eso.pipeline:main"

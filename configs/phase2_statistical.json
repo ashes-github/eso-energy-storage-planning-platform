@@ -1,0 +1,25 @@
+{
+  "horizons": [8, 48],
+  "min_train_days": 180,
+  "step": 336,
+  "mase_period": 48,
+  "models": ["persistence", "seasonal_48", "seasonal_336", "sarima", "ets"],
+  "representative_count": 6,
+  "save_models": false,
+  "sarima": {
+    "order": [1, 0, 0],
+    "seasonal_order": [1, 0, 0, 48],
+    "trend": null,
+    "maxiter": 200,
+    "min_observations": 336,
+    "train_window": null
+  },
+  "ets": {
+    "trend": null,
+    "damped_trend": false,
+    "seasonal_periods": 48,
+    "maxiter": 1000,
+    "min_observations": 336,
+    "train_window": null
+  }
+}

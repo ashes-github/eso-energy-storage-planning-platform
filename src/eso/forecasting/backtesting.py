@@ -37,7 +37,8 @@ class WalkForward:
         return range(start, stop - longest + 1, self.step)
 
 
-def backtest(dataset, plan, models, split='validation'):
+def backtest(dataset, plan, models, split='validation', *, diagnostics=None, artifact_dir=None,
+             progress=None):
     """Factories create fresh models at each origin; fit sees only past data.
 
     origin is the FIRST forecast interval start; history ends one half-hour
@@ -54,6 +55,8 @@ def backtest(dataset, plan, models, split='validation'):
         future = panel.columns[position:position + max(plan.horizons)]
         scale = mase_scale(history, plan.scale_period)
         for name, factory in models.items():
+            if progress is not None:
+                progress(future[0], name)
             model = factory()
             model.fit(history.copy())
             prediction = model.predict(future.copy())
@@ -62,6 +65,12 @@ def backtest(dataset, plan, models, split='validation'):
             prediction = prediction.astype(float)
             if np.isinf(prediction.to_numpy()).any():
                 raise ValueError(f'{name}: infinite predictions')
+            if diagnostics is not None:
+                for info in getattr(model, 'diagnostics', []):
+                    diagnostics.append(dict(info, model=name, split=split, origin=future[0]))
+            if artifact_dir is not None and hasattr(model, 'save'):
+                from pathlib import Path
+                model.save(Path(artifact_dir) / name / f'origin_{position:08d}')
             for horizon in plan.horizons:
                 for gsp in panel.index:
                     for lead in range(1, horizon + 1):

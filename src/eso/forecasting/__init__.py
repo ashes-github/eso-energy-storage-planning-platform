@@ -3,5 +3,8 @@
 from .data import ForecastDataset
 from .backtesting import WalkForward, backtest
 from .baselines import SeasonalNaive
+from .statistical import StatisticalForecaster
+from .features import FeatureSpec, build_features, build_training_examples
 
-__all__ = ['ForecastDataset', 'WalkForward', 'backtest', 'SeasonalNaive']
+__all__ = ['ForecastDataset', 'WalkForward', 'backtest', 'SeasonalNaive', 'StatisticalForecaster',
+           'FeatureSpec', 'build_features', 'build_training_examples']
