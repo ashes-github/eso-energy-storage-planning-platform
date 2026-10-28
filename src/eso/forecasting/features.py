@@ -1,8 +1,8 @@
 """Origin-available demand features and known-future local calendar features.
 
-An origin is the FIRST forecast interval, matching backtesting.py. lag_k is
-Y[origin - k * 30 minutes], independent of lead. No target-relative lag can
-accidentally reach into the unobserved forecast window.
+An origin is the FIRST forecast interval, matching backtesting.py. origin_lag_k
+is Y[origin - k * 30 minutes], independent of lead. target_lag_k aligns the donor
+to each target, and reads it only when strictly before the forecast origin.
 """
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -26,9 +26,10 @@ class FeatureSpec:
     rolling_means: tuple = (6, 12, 48, 336)
     rolling_stds: tuple = (48, 336)
     std_ddof: int = 1
+    target_lags: tuple = (48, 96, 336)
 
     def __post_init__(self):
-        for field in ('lags', 'rolling_means', 'rolling_stds'):
+        for field in ('lags', 'rolling_means', 'rolling_stds', 'target_lags'):
             values = getattr(self, field)
             if not isinstance(values, (tuple, list)):
                 raise ValueError(f'{field} must be a sequence of positive integers')
@@ -70,8 +71,9 @@ def build_features(history, future, *, spec=FeatureSpec(), holiday_calendar=None
     """Return numeric features indexed by (gsp, origin, timestamp).
 
     history has the ForecastDataset observed-panel contract. future contains
-    consecutive half-hours immediately after history. History-derived features
-    repeat across leads; calendar features describe each future target interval.
+    consecutive half-hours immediately after history. Origin-relative features
+    repeat across leads; target-relative lags and calendar features vary by lead.
+    A target-relative donor at/after origin is unavailable and remains NaN.
     Missing lag donors, incomplete rolling windows and unknown holidays remain
     NaN. Rolling standard deviations use spec.std_ddof (sample by default).
     GSP identity remains an index field for a future fold-fitted encoder.
@@ -94,7 +96,19 @@ def build_features(history, future, *, spec=FeatureSpec(), holiday_calendar=None
     result['lead'] = np.tile(np.arange(1, h + 1), len(panel))
     for lag in spec.lags:
         values = panel.iloc[:, -lag].to_numpy() if lag <= panel.shape[1] else np.full(len(panel), np.nan)
-        result[f'lag_{lag}'] = np.repeat(values, h)
+        result[f'origin_lag_{lag}'] = np.repeat(values, h)
+    origin_position = panel.shape[1]
+    target_positions = origin_position + np.arange(h)
+    for lag in spec.target_lags:
+        donor_positions = target_positions - lag
+        available = (donor_positions >= 0) & (donor_positions < origin_position)
+        donors = donor_positions[available]
+        # Only guarded donor positions may be used for positional indexing.
+        # In particular lead 49's daily donor is at origin and cannot be read.
+        assert (donors < origin_position).all(), 'Target lag reaches the forecast window'
+        values = np.full((len(panel), h), np.nan)
+        values[:, available] = panel.iloc[:, donors].to_numpy()
+        result[f'target_lag_{lag}'] = values.reshape(-1)
     for windows, statistic in ((spec.rolling_means, 'mean'), (spec.rolling_stds, 'std')):
         for window in windows:
             values = np.full(len(panel), np.nan)

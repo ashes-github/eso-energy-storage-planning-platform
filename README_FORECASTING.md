@@ -8,7 +8,8 @@ SARIMA and additive ETS are now available through `--config configs/phase2_stati
 see the [statistical review guide](docs/statistical_forecasting.md) for policies,
 180-day study settings and historical GP9 inputs. Global tree models remain deferred.
 The [forecast feature builder](docs/forecasting_features.md) now provides
-history-only lags/rolling statistics, future local calendar features and
+origin-relative lags/rolling statistics, guarded target-relative seasonal lags,
+future local calendar features and
 training examples with targets restricted to each fitting history, ready for ML integration.
 
 ## Choose the run purpose

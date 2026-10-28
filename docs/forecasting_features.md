@@ -16,7 +16,8 @@ Only history strictly before `o` enters demand-derived features.
 | Features | Definition |
 | --- | --- |
 | `lead` | One-based half-hour forecast lead |
-| `lag_1`, `lag_2`, `lag_48`, `lag_96`, `lag_336` | Observations 1, 2, 48, 96, 336 half-hours before the origin |
+| `origin_lag_1`, `origin_lag_2`, `origin_lag_48`, `origin_lag_96`, `origin_lag_336` | Observations 1, 2, 48, 96, 336 half-hours before the origin; fixed across leads |
+| `target_lag_48`, `target_lag_96`, `target_lag_336` | Observations 48, 96, 336 elapsed half-hours before each target, only when the donor precedes the origin |
 | `mean_6`, `mean_12`, `mean_48`, `mean_336` | Mean of the last complete observed window ending immediately before the origin |
 | `std_48`, `std_336` | Sample standard deviation (`ddof=1`) of the same history windows |
 | `settlement_period` | One-based elapsed half-hour since target's Europe/London local midnight |
@@ -26,12 +27,25 @@ Only history strictly before `o` enters demand-derived features.
 | `time_of_day_sin`, `time_of_day_cos` | Cyclic local clock-slot encoding with period 48 |
 | `day_of_week_sin`, `day_of_week_cos` | Cyclic weekday encoding with period 7 |
 
-Demand features are **origin-relative** and repeat across all leads at that origin.
-For example, at a 10:00 origin, `lag_1` is the observed 09:30 quantity even for the
-24th or 48th lead. It never reads the target's preceding interval when that interval
-is in the forecast window. `lead` and future calendar variables distinguish the
-targets. This is a direct multi-lead feature design; recursive predictions or
-target-relative seasonal donors would need separately specified features.
+Origin-relative lags and rolling statistics repeat across all leads at an origin.
+For example, at a 10:00 origin, `origin_lag_1` is the observed 09:30 quantity even
+for the 24th or 48th lead. Target-relative seasonal lags follow the target's elapsed
+time instead, providing the corresponding daily/two-day/weekly historical slots.
+This is a direct multi-lead design; no recursive predictions are used as donors.
+
+Let `p` be the origin position in a contiguous UTC panel and `h` the one-based
+lead. The target position is `p + h - 1`. For `target_lag_k`, the donor position is
+`p + h - 1 - k`. It is read only if `0 <= donor < p`, with an explicit assertion
+before indexing. Thus daily donors at leads 1–48 are `p-48` through `p-1`;
+at lead 49 the donor reaches `p` and is unavailable, so the feature is NaN.
+Insufficient early history also gives NaN, never negative-index wraparound.
+These are elapsed-UTC seasonal lags, not local-clock matches across DST.
+
+**Feature schema update:** the original `lag_k` output columns are now named
+`origin_lag_k` to distinguish the two families. Update any consumers referencing
+the old names. `FeatureSpec.lags` continues to configure origin-relative lags;
+the new `FeatureSpec.target_lags` defaults to `(48, 96, 336)`. Existing statistical
+models do not consume this feature matrix, so their forecasts are unchanged.
 
 Missing lag donors remain NaN. A rolling feature is NaN if its entire window is
 not present and observed, even if a partial mean could be computed. Standard
@@ -97,3 +111,6 @@ missingness, calendar encodings, 46/50-period DST days, holiday unknowns, matchi
 target axes, purged final horizons, and forecast-feature invariance when future
 observations are perturbed. A feature-backed test model also runs through the
 existing fit/predict walk-forward interface.
+Target-lag tests check exact agreement with daily/weekly naive donors through
+48 leads and reject unavailable donors at/after every inner origin, including
+longer horizons and insufficient-history boundaries.

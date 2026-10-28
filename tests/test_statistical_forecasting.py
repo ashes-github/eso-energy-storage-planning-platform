@@ -74,6 +74,13 @@ class ComparisonTests(unittest.TestCase):
                 load_config(cfg)
             with self.assertRaises(FileExistsError):
                 main(['--input', 'missing', '--output', directory, '--test-start', '2022-01-01Z'])
+            # Refusal happens before reading inputs or altering prior artifacts.
+            predictions = root / 'predictions.csv'
+            predictions.write_text('original experiment', encoding='utf-8')
+            before = {p.name: p.read_bytes() for p in root.iterdir()}
+            with self.assertRaises(FileExistsError):
+                main(['--input', 'missing', '--output', directory, '--test-start', '2022-01-01Z'])
+            self.assertEqual(before, {p.name: p.read_bytes() for p in root.iterdir()})
 
 
 @unittest.skipUnless(importlib.util.find_spec('statsmodels'), 'Install statistical extra')

@@ -27,7 +27,7 @@ class FeatureTests(unittest.TestCase):
             group = features.xs(gsp, level='gsp')
             np.testing.assert_array_equal(group.lead, np.arange(1, 49))
             for lag in (1, 2, 48, 96, 336):
-                np.testing.assert_allclose(group[f'lag_{lag}'], sign * (400 - lag))
+                np.testing.assert_allclose(group[f'origin_lag_{lag}'], sign * (400 - lag))
             for window in (6, 12, 48, 336):
                 np.testing.assert_allclose(group[f'mean_{window}'],
                                            sign * np.arange(400 - window, 400).mean())
@@ -44,15 +44,15 @@ class FeatureTests(unittest.TestCase):
         p.iloc[1] = 0
         result = build_features(p, future_after(p, 2))
         a, b = result.xs('001', level='gsp'), result.xs('B', level='gsp')
-        self.assertTrue(a.lag_2.isna().all())
+        self.assertTrue(a.origin_lag_2.isna().all())
         self.assertTrue(a.mean_6.isna().all())
         self.assertTrue(a.std_48.isna().all())
-        self.assertTrue(a.lag_1.notna().all())
+        self.assertTrue(a.origin_lag_1.notna().all())
         self.assertTrue((b.std_48 == 0).all())
         short = build_features(panel(4), future_after(panel(4), 2))
-        self.assertTrue(short.lag_48.isna().all())
+        self.assertTrue(short.origin_lag_48.isna().all())
         self.assertTrue(short.mean_6.isna().all())
-        self.assertTrue(short.lag_1.notna().all())
+        self.assertTrue(short.origin_lag_1.notna().all())
 
     def test_future_targets_cannot_change_first_origin_features(self):
         p = panel(100)
@@ -79,7 +79,7 @@ class FeatureTests(unittest.TestCase):
                          set(p.columns[list(range(48, 101 - 8 + 1, 7))]))
         for (gsp, origin, timestamp), target in targets.items():
             position = p.columns.get_loc(origin)
-            self.assertEqual(features.loc[(gsp, origin, timestamp), 'lag_1'],
+            self.assertEqual(features.loc[(gsp, origin, timestamp), 'origin_lag_1'],
                              p.iloc[p.index.get_loc(gsp), position - 1])
             if pd.notna(target):
                 self.assertEqual(target, p.at[gsp, timestamp])
@@ -132,7 +132,7 @@ class FeatureTests(unittest.TestCase):
             def predict(self, timestamps):
                 features = build_features(self.history, timestamps)
                 seen.append(features)
-                return pd.DataFrame(features.lag_1.to_numpy().reshape(len(self.history), -1),
+                return pd.DataFrame(features.origin_lag_1.to_numpy().reshape(len(self.history), -1),
                                     index=self.history.index, columns=timestamps)
         p = panel(220)
         plan = WalkForward(100, p.columns[160].isoformat(), horizons=(8, 48))
@@ -147,7 +147,9 @@ class FeatureTests(unittest.TestCase):
 
     def test_spec_and_invalid_inputs(self):
         for kwargs in [dict(lags=(0,)), dict(lags=(1, 1)), dict(lags=(True,)),
-                       dict(std_ddof=1.0), dict(rolling_stds=(1,))]:
+                       dict(std_ddof=1.0), dict(rolling_stds=(1,)),
+                       dict(target_lags=(0,)), dict(target_lags=(48, 48)),
+                       dict(target_lags=(True,))]:
             with self.assertRaises(ValueError):
                 FeatureSpec(**kwargs)
         p = panel()
@@ -160,6 +162,56 @@ class FeatureTests(unittest.TestCase):
                 build_features(p, future, holiday_calendar=calendar)
         with self.assertRaises(ValueError):
             build_training_examples(panel(10), min_history=8, horizon=8)
+
+    def test_target_aligned_seasonal_lags_match_naive_donors(self):
+        from eso.forecasting import SeasonalNaive
+        p = panel()
+        future = future_after(p)
+        features = build_features(p, future)
+        for lag in (48, 96, 336):
+            expected = SeasonalNaive(lag).fit(p).predict(future)
+            for gsp, sign in [('001', 1), ('B', -1)]:
+                group = features.xs(gsp, level='gsp')
+                np.testing.assert_array_equal(group[f'target_lag_{lag}'],
+                                              sign * np.arange(400 - lag, 448 - lag))
+                np.testing.assert_array_equal(group[f'target_lag_{lag}'], expected.loc[gsp])
+        # Origin daily lag is fixed; target daily lag follows all 48 donor slots.
+        group = features.xs('001', level='gsp')
+        self.assertEqual(group.origin_lag_48.nunique(), 1)
+        self.assertEqual(group.target_lag_48.nunique(), 48)
+        self.assertEqual(group.target_lag_48.iloc[-1], p.loc['001'].iloc[-1])
+
+    def test_unavailable_target_lags_never_wrap_or_reuse_future_predictions(self):
+        p = panel(24)
+        p.iloc[0, 3] = np.nan
+        features = build_features(p, future_after(p, 60),
+                                  spec=FeatureSpec(target_lags=(1, 48, 96)))
+        group = features.xs('001', level='gsp')
+        self.assertTrue(group.target_lag_48.iloc[:24].isna().all())
+        np.testing.assert_allclose(group.target_lag_48.iloc[24:48], p.loc['001'], equal_nan=True)
+        self.assertTrue(group.target_lag_48.iloc[48:].isna().all())
+        self.assertTrue(group.target_lag_96.isna().all())
+        self.assertEqual(group.target_lag_1.iloc[0], p.loc['001'].iloc[-1])
+        self.assertTrue(group.target_lag_1.iloc[1:].isna().all())
+
+    def test_training_target_lags_are_strictly_before_each_inner_origin(self):
+        p = panel(160)
+        kwargs = dict(horizon=60, min_history=70, step=7)
+        features, _ = build_training_examples(p, **kwargs)
+        for (gsp, origin, timestamp), row in features.iterrows():
+            origin_position = p.columns.get_loc(origin)
+            target_position = p.columns.get_loc(timestamp)
+            for lag in (48, 96, 336):
+                donor = target_position - lag
+                if 0 <= donor < origin_position:
+                    self.assertEqual(row[f'target_lag_{lag}'], p.loc[gsp].iloc[donor])
+                else:
+                    self.assertTrue(np.isnan(row[f'target_lag_{lag}']))
+        changed = p.copy()
+        changed.iloc[:, 70:] += 10_000_000
+        after, _ = build_training_examples(changed, **kwargs)
+        pd.testing.assert_frame_equal(features.xs(p.columns[70], level='origin'),
+                                      after.xs(p.columns[70], level='origin'))
 
 
 if __name__ == '__main__':

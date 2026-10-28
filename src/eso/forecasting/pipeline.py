@@ -89,8 +89,8 @@ def main(argv=None):
     parser.add_argument("--split", choices=["validation", "test"], default="validation")
     args = parser.parse_args(argv)
     output = Path(args.output)
-    # if output.exists():
-    #   raise FileExistsError(f"Refusing to reuse output directory: {output}")
+    if output.exists():
+        raise FileExistsError(f"Refusing to reuse output directory: {output}")
     config = load_config(args.config)
     min_train = (
         args.min_train if args.min_train is not None else config["min_train_days"] * 48
@@ -158,7 +158,7 @@ def main(argv=None):
         ),
         convergence_policy="nonconverged fits emit NaN; no baseline fallback",
     )
-    output.mkdir(parents=True, exist_ok=True)
+    output.mkdir(parents=True, exist_ok=False)
     (output / "config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
     selection.to_csv(output / "series_selection.csv")
     (output / "run.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")

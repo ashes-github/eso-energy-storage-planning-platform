@@ -1,6 +1,8 @@
 # Statistical forecasting: initial review
 
-The Phase 2B implementation and the full regression suite passed **42 tests**.
+The original Phase 2B milestone recorded **42 passing tests**. After the
+October 29, 2026 review fixes, the current full regression suite passes **56 tests**,
+including restored output-directory protection and target-aligned lag leakage tests.
 The tests include statistical forecast isolation from future perturbations, signed
 quantities, missing-data policies, nonconvergence, training-only GSP selection,
 common-case metrics, output protection and fitted-model round-trip forecasts.
