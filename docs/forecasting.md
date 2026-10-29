@@ -10,7 +10,9 @@ expanding-window evaluation, per-GSP/pooled/per-lead MAE/RMSE/MASE, common-case
 comparisons, and representative-series SARIMA/ETS benchmarks. See the
 [statistical forecasting review guide](statistical_forecasting.md) for model
 settings, failure policies, historical data and configuration-driven execution.
-Global boosted trees, LSTM/GRU and intervals remain later milestones; no model
+The [global LightGBM learner](global_tree_forecasting.md) now uses pooled direct-lead
+training, categorical GSP identity and native missing predictors. XGBoost, LSTM/GRU
+and intervals remain later milestones; no general model
 superiority or operational accuracy is claimed yet.
 
 ## Input and timing
@@ -97,10 +99,11 @@ Keep the source Phase 1 run alongside these artifacts for its revision/source au
 
 The [feature foundation](forecasting_features.md) now provides origin-relative
 lags/rolling statistics, known-future local calendar features and purged training
-examples. ML fitting and fold-specific transformations remain to be implemented.
+examples. LightGBM now consumes these features with fold-fitted GSP categories;
+numeric features retain native missingness and require no learned scaling/imputation.
 
-Next implement a global tree model with
-GSP identity and origin-available lags/rolling features plus known future calendar
-features. Fit encoders/scalers only on training folds. Add a global sequence model,
+Next validate on longer settlement histories, then compare demand-only LightGBM
+with an explicit weather-augmented model using origin-available weather vintages.
+Fit any future encoders/scalers only on training folds. Add a global sequence model,
 calibration-only intervals, seasonal/day-type/regime error slices, then join Phase 1
 outputs with explicit availability rules.

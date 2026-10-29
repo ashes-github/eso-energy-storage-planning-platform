@@ -11,6 +11,7 @@ dependencies = ["numpy", "pandas", "scipy>=1.14", "scikit-learn", "torch", "pyro
 
 [project.optional-dependencies]
 statistical = ["statsmodels>=0.14.6,<0.15"]
+ml = ["lightgbm>=4.6,<5"]
 
 [project.scripts]
 eso-phase1 = "eso.pipeline:main"

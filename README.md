@@ -20,6 +20,8 @@ provides an observed-data contract, three naive baselines, and expanding-window
 evaluation for 4-hour and day-ahead forecasts with a reserved final test period.
 Phase 2B adds representative-series SARIMA/ETS with per-lead and common-case
 evaluation; see the [statistical forecasting guide](docs/statistical_forecasting.md).
+Phase 2C adds a pooled direct multi-lead LightGBM model with fold-fitted GSP
+categories; see the [global tree guide](docs/global_tree_forecasting.md).
 
 See the [forecasting run guide](README_FORECASTING.md) for input preparation,
 PowerShell commands, validation/test runs, outputs and troubleshooting.

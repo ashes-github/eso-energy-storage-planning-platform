@@ -1,4 +1,4 @@
-"""Run observed-data Phase 2 baseline or statistical benchmarks."""
+"""Run observed-data Phase 2 baseline, statistical or global-tree benchmarks."""
 
 import argparse
 import hashlib
@@ -28,7 +28,7 @@ def sha256(path):
 def reproducibility(directory):
     root = Path(__file__).resolve().parents[3]
     packages = {}
-    for name in ("numpy", "pandas", "scipy", "statsmodels"):
+    for name in ("numpy", "pandas", "scipy", "statsmodels", "scikit-learn", "lightgbm"):
         try:
             packages[name] = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
@@ -128,6 +128,11 @@ def main(argv=None):
             raise ImportError(
                 'Install the statistical extra: pip install -e ".[statistical]"'
             ) from exc
+    if 'lightgbm' in models:
+        try:
+            import lightgbm  # noqa: F401
+        except ImportError as exc:
+            raise ImportError('Install the ML extra: pip install -e ".[ml]"') from exc
     config.update(
         min_train=min_train, step=step, test_start=args.test_start, split=args.split
     )
@@ -154,8 +159,11 @@ def main(argv=None):
         ],
         n_origins=len(origins),
         missing_policy=dict(
-            sarima="state-space gaps retained", ets="refuse incomplete fitting windows"
+            sarima="state-space gaps retained", ets="refuse incomplete fitting windows",
+            lightgbm="native missing predictors; exclude missing training labels; zero is observed"
         ),
+        global_ml_policy="single pooled direct-lead model; fold-fitted GSP categories; no target encoding; "
+                         "known-GSP temporal evaluation; no weather or holiday calendar supplied",
         convergence_policy="nonconverged fits emit NaN; no baseline fallback",
     )
     output.mkdir(parents=True, exist_ok=False)

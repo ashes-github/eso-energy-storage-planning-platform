@@ -2,15 +2,18 @@
 
 The Phase 2 pipeline runs **persistence, daily seasonal naive (48 steps), and weekly
 seasonal naive (336 steps)** with expanding-window evaluation. Every run evaluates
-both **4-hour (8-step)** and **day-ahead (48-step)** forecasts. Tree models,
+both **4-hour (8-step)** and **day-ahead (48-step)** forecasts. A pooled direct-lead
+LightGBM model is available through `configs/phase2_ml.json` (study) or
+`configs/phase2_ml_smoke.json` (short pipeline check). See the
+[global tree run guide](docs/global_tree_forecasting.md). XGBoost,
 LSTM/GRU and prediction intervals are not implemented yet. Representative-series
 SARIMA and additive ETS are now available through `--config configs/phase2_statistical.json`;
 see the [statistical review guide](docs/statistical_forecasting.md) for policies,
-180-day study settings and historical GP9 inputs. Global tree models remain deferred.
+180-day study settings and historical GP9 inputs.
 The [forecast feature builder](docs/forecasting_features.md) now provides
 origin-relative lags/rolling statistics, guarded target-relative seasonal lags,
 future local calendar features and
-training examples with targets restricted to each fitting history, ready for ML integration.
+training examples with targets restricted to each fitting history, used by LightGBM.
 
 ## Choose the run purpose
 
@@ -20,8 +23,10 @@ Use an explicit configuration for repeatable runs:
 | --- | --- | --- | --- |
 | Pipeline check | `configs/phase2_pipeline_check.json` | 14 days / 672 half-hours | 3, spanning low/medium/high volume |
 | Forecasting comparison | `configs/phase2_forecasting_comparison.json` | 180 days / 8640 half-hours | 6, spanning low/medium/high volume |
+| Global ML pipeline check | `configs/phase2_ml_smoke.json` | 14 days / 672 half-hours | 20 volume-stratified GSPs |
+| Global ML comparison | `configs/phase2_ml.json` | 180 days / 8640 half-hours | All GSPs meeting 95% initial observed coverage |
 
-Both configurations run persistence, daily/weekly seasonal naive, SARIMA and ETS,
+The first two configurations run persistence, daily/weekly seasonal naive, SARIMA and ETS,
 with 4-hour and day-ahead horizons and weekly forecast origins. All models in a
 comparison receive the same folds and available history. The pipeline check caps
 SARIMA/ETS fitting at the latest 672 half-hours to keep checks inexpensive as
@@ -45,21 +50,24 @@ Both commands default to validation. The comparison needs 180 initial days plus
 validation and reserved test windows; the existing 61-day panel cannot satisfy it.
 Run `--split test` only after freezing model choices, settings and the boundary.
 CLI `--min-train` and `--step` override configuration settings; omit them when
-using these presets as supplied. ML models remain a later implementation milestone.
+using these presets as supplied. The global ML presets run LightGBM and the three
+naive baselines, with fixed seed, native missing predictors and fold-fitted GSP categories.
 
 The earlier configs remain available: `phase2_baseline.json` checks the three
 naive baselines, and `phase2_statistical.json` has the same settings as the new
 forecasting-comparison preset.
 
-`configs/phase2_ml.json` is the starting preset for future ML incorporation. It
-currently matches the forecasting-comparison settings: 180 initial days, the same
-six-GSP sampling rule, weekly origins and both horizons. Running it today evaluates
-the five implemented baseline/statistical models listed in `models`. Add ML model
-names and feature/hyperparameter settings when their implementations and config
-validation support them. The strict loader currently rejects unsupported models
-and settings. When extending the preset, retain shared evaluation origins, targets
-and selected GSPs for comparisons, and fit feature transformations within each
-training fold. ML implementation remains deferred pending the statistical review.
+For a runnable LightGBM smoke check on the existing observed panel:
+
+```powershell
+$env:PYTHONPATH = 'src'
+.\venv\python.exe -m pip install -e ".[ml]"
+.\venv\python.exe -m eso.forecasting.pipeline --config configs/phase2_ml_smoke.json --input output/forecast_input --output output/my_ml_smoke_validation --test-start 2022-07-15T00:00:00Z
+```
+
+For the longer-history ML study, use `--config configs/phase2_ml.json` with a
+verified longer input panel and its fixed test boundary. The model trains across
+all initially eligible GSPs. See [global ML settings, artifacts and memory limits](docs/global_tree_forecasting.md).
 
 ## 1. Set up
 
@@ -222,8 +230,8 @@ and predictions. **Debug ESO Phase 1** remains the screening-pipeline configurat
 | `--step` | `48` | Distance between origins in half-hours (24 elapsed hours). |
 | `--split` | `validation` | Evaluate `validation` or `test`. |
 
-Both horizons and all three baselines always run; there is no CLI model/horizon
-selection option. Use `--step 8` for an origin every four hours. This creates
+Without `--config`, both horizons and all three baselines run. JSON configuration
+selects models/horizons, including LightGBM and SARIMA/ETS. Use `--step 8` for an origin every four hours. This creates
 overlapping day-ahead forecasts and more rows. Each origin/GSP produces 168 rows:
 three models times (8 + 48) leads. Results accumulate in memory before export.
 

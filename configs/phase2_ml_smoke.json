@@ -1,0 +1,31 @@
+{
+  "horizons": [8, 48],
+  "min_train_days": 14,
+  "step": 336,
+  "mase_period": 48,
+  "models": ["persistence", "seasonal_48", "seasonal_336", "lightgbm"],
+  "representative_count": 20,
+  "selection_min_observed_fraction": 0.95,
+  "save_models": true,
+  "lightgbm": {
+    "min_history": 336,
+    "training_step": 48,
+    "n_estimators": 100,
+    "learning_rate": 0.05,
+    "num_leaves": 31,
+    "min_child_samples": 20,
+    "reg_lambda": 1.0,
+    "random_state": 7,
+    "n_jobs": 4,
+    "min_training_rows": 100,
+    "max_training_rows": 5000000,
+    "train_window": 672,
+    "feature_spec": {
+      "lags": [1, 2, 48, 96, 336],
+      "target_lags": [48, 96, 336],
+      "rolling_means": [6, 12, 48, 336],
+      "rolling_stds": [48, 336],
+      "std_ddof": 1
+    }
+  }
+}

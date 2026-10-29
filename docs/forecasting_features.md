@@ -3,7 +3,8 @@
 `src/eso/forecasting/features.py` provides origin-available features for future
 direct multi-lead ML models. It implements no model fitting, encoding, scaling or
 imputation. Existing baseline/statistical forecasts remain unchanged. The ML
-preset still runs its current five models until an ML implementation is added.
+preset now uses these features in [GlobalTreeForecaster](global_tree_forecasting.md),
+with categorical GSP identity fitted inside each training fold.
 
 ## Time convention and schema
 

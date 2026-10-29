@@ -24,14 +24,15 @@ historical in the statistical results note.
 
 ## Remaining recommendations
 
-- **Training-only coverage eligibility:** add an optional, audited observed-fraction
-  threshold for representative-series sampling. Current sampling reports coverage
-  without imposing that threshold. Keep constants/zeros and avoid excluding GSPs
-  based on model performance.
+- **Training-only coverage eligibility:** implemented with
+  `selection_min_observed_fraction`; ML presets use 0.95 and earlier presets keep
+  0.0. The audit records eligibility and exclusions. Observed constants/zeros
+  remain eligible; model failures never drive selection.
 - **Holiday calendar:** provide every local date explicitly, including non-holidays,
   with the correct regional/vintage rules before using this feature in ML.
-- **Global-scale execution:** vectorize or stream prediction construction and review
-  training-example memory use before multi-year all-GSP runs.
+- **Global-scale execution:** prediction construction is now vectorized and ML
+  training has a pre-allocation row budget. Full tables remain in memory;
+  streaming remains a future scale improvement.
 - **Repository polish:** expand package description, add an `eso-forecast` entry point
   and CI coverage for core and statistical tests.
 - **Long-history study:** verify actual settlement coverage in the local historical
@@ -39,6 +40,8 @@ historical in the statistical results note.
   a short-history smoke experiment, not a completed 180-day modelling study.
 
 Retain unrestricted and common-case/per-lead metrics, existing SARIMA/ETS settings,
-and explicit missingness/failure policies. ML models, fold-fitted identity encoders
-and preprocessing remain a subsequent implementation milestone; no ML model is
-activated by these review fixes.
+and explicit missingness/failure policies. Subsequent Phase 2C work now implements
+global LightGBM with fold-fitted GSP categories and native missing predictors.
+See the [global tree guide](global_tree_forecasting.md) and
+[65-test implementation/smoke validation](global_tree_results.md). Weather,
+sequence models, intervals and the long-history study remain pending.

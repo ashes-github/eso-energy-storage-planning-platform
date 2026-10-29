@@ -49,7 +49,7 @@ def backtest(dataset, plan, models, split='validation', *, diagnostics=None, art
     origins = plan.folds(panel.columns, split)
     if not models:
         raise ValueError('Require at least one model factory')
-    rows = []
+    blocks = []
     for position in origins:
         history = panel.iloc[:, :position].copy()
         future = panel.columns[position:position + max(plan.horizons)]
@@ -72,11 +72,14 @@ def backtest(dataset, plan, models, split='validation', *, diagnostics=None, art
                 from pathlib import Path
                 model.save(Path(artifact_dir) / name / f'origin_{position:08d}')
             for horizon in plan.horizons:
-                for gsp in panel.index:
-                    for lead in range(1, horizon + 1):
-                        timestamp = future[lead - 1]
-                        rows.append(dict(model=name, split=split, origin=future[0],
-                                         timestamp=timestamp, horizon=horizon, lead=lead, gsp=gsp,
-                                         actual=panel.at[gsp, timestamp], prediction=prediction.at[gsp, timestamp],
-                                         mase_scale=scale.loc[gsp]))
-    return pd.DataFrame(rows)
+                # Preserve GSP-major/lead-minor case order without one Python
+                # dictionary per forecast case. The final table is still in RAM.
+                blocks.append(pd.DataFrame(dict(
+                    model=name, split=split, origin=future[0],
+                    timestamp=pd.DatetimeIndex(np.tile(future[:horizon].to_numpy(), len(panel))),
+                    horizon=horizon, lead=np.tile(np.arange(1, horizon + 1), len(panel)),
+                    gsp=np.repeat(panel.index.to_numpy(), horizon),
+                    actual=panel.iloc[:, position:position + horizon].to_numpy().reshape(-1),
+                    prediction=prediction.iloc[:, :horizon].to_numpy().reshape(-1),
+                    mase_scale=np.repeat(scale.to_numpy(), horizon))))
+    return pd.concat(blocks, ignore_index=True) if blocks else pd.DataFrame()
