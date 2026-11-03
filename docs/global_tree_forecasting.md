@@ -1,5 +1,9 @@
 # Phase 2C: global direct multi-lead LightGBM
 
+The subsequent [long-history study](long_history_study.md) is now executed;
+see [its 363-GSP validation and ablation results](long_history_results.md).
+The commands below remain the original single-run presets.
+
 `GlobalTreeForecaster` in `src/eso/forecasting/ml.py` implements one pooled
 LightGBM regressor per forecast origin. The same learner serves every selected
 GSP and every lead, with `lead` and categorical `gsp_id` as explicit predictors.

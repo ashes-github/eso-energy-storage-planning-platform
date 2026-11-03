@@ -17,6 +17,11 @@ training examples with targets restricted to each fitting history, used by Light
 
 ## Choose the run purpose
 
+For the verified 365-day-history, all-eligible-GSP study with a full validation
+year and controlled feature ablations, see the [long-history study guide](docs/long_history_study.md).
+Its runner streams predictions by origin for bounded memory and keeps the final
+test period reserved. The shorter presets below remain useful for pipeline checks.
+
 Use an explicit configuration for repeatable runs:
 
 | Purpose | Configuration | Initial history | GSP sample |

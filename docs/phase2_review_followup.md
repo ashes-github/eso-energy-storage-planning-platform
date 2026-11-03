@@ -35,13 +35,14 @@ historical in the statistical results note.
   streaming remains a future scale improvement.
 - **Repository polish:** expand package description, add an `eso-forecast` entry point
   and CI coverage for core and statistical tests.
-- **Long-history study:** verify actual settlement coverage in the local historical
-  GP9 batches and prepare a longer observed panel. The existing review run remains
-  a short-history smoke experiment, not a completed 180-day modelling study.
+- **Long-history study:** completed as a resource-bounded 365-day-history,
+  363-GSP validation study across 2022, with four matched feature ablations.
+  See [the study results](long_history_results.md). The 2023 final test remains reserved.
 
 Retain unrestricted and common-case/per-lead metrics, existing SARIMA/ETS settings,
 and explicit missingness/failure policies. Subsequent Phase 2C work now implements
 global LightGBM with fold-fitted GSP categories and native missing predictors.
 See the [global tree guide](global_tree_forecasting.md) and
 [65-test implementation/smoke validation](global_tree_results.md). Weather,
-sequence models, intervals and the long-history study remain pending.
+sequence models and intervals remain pending. The long-history study now provides
+validation evidence and identifies small/constant-series weaknesses before those extensions.

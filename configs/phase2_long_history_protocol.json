@@ -1,0 +1,20 @@
+{
+  "study": "Phase 2C.1 frozen demand-only history and feature study",
+  "panel_start": "2021-01-01",
+  "panel_end": "2023-03-31",
+  "initial_training": "2021-01-01 through 2021-12-31; 365 elapsed days",
+  "validation": "2022-01-01 through 2022-12-31",
+  "test_start": "2023-01-01T00:00:00Z",
+  "reserved_test": "2023-01-01 through 2023-03-31; not scored in this study",
+  "selection": "All GSPs with >=95% observed coverage in the initial training year; constants retained",
+  "evaluation_schedule": "Every 13 elapsed days, 29 origins across all seasons and all weekdays",
+  "training_schedule": "Every 8 elapsed days; cycles weekdays; entire expanding history; declared for memory/runtime",
+  "controlled_settings": "Existing unweighted L2 LightGBM: 200 trees, 31 leaves, learning_rate=0.05, seed=7, four CPU threads",
+  "scope": "Validation, per-GSP benefit distribution, volume/daytype/season/lead slices, importance and four feature ablations; no tuning, weather, actual holiday calendar, new algorithms or final test scores",
+  "experiments": [
+    {"name": "M3_full", "config": "configs/phase2_long_history_full.json"},
+    {"name": "M0_calendar", "config": "configs/phase2_long_history_calendar.json"},
+    {"name": "M1_origin", "config": "configs/phase2_long_history_origin.json"},
+    {"name": "M2_seasonal", "config": "configs/phase2_long_history_seasonal.json"}
+  ]
+}

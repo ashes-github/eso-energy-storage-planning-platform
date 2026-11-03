@@ -22,6 +22,9 @@ Phase 2B adds representative-series SARIMA/ETS with per-lead and common-case
 evaluation; see the [statistical forecasting guide](docs/statistical_forecasting.md).
 Phase 2C adds a pooled direct multi-lead LightGBM model with fold-fitted GSP
 categories; see the [global tree guide](docs/global_tree_forecasting.md).
+The [long-history study](docs/long_history_results.md) now evaluates 363 eligible
+GSPs across 2022 using a full year of initial history, paired benefit analysis
+and controlled feature ablations. Its final 2023 test period remains reserved.
 
 See the [forecasting run guide](README_FORECASTING.md) for input preparation,
 PowerShell commands, validation/test runs, outputs and troubleshooting.

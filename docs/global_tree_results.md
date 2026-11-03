@@ -1,5 +1,9 @@
 # Phase 2C: initial global LightGBM smoke results
 
+This note preserves the original smoke experiment. The subsequent
+[long-history study results](long_history_results.md) cover 363 eligible GSPs,
+a 2022 validation year and controlled feature ablations.
+
 The full **65-test** suite passed on October 29, 2026, including actual LightGBM
 fits, future-perturbation isolation, native missingness, one pooled fit, purged
 labels, training-only eligibility, row-budget checks and native model round trips.
