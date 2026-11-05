@@ -22,6 +22,16 @@ year and controlled feature ablations, see the [long-history study guide](docs/l
 Its runner streams predictions by origin for bounded memory and keeps the final
 test period reserved. The shorter presets below remain useful for pipeline checks.
 
+The completed [temperature oracle study](docs/temperature_oracle_study.md)
+adds one realized target-time temperature feature to frozen M2 on the same
+363 GSPs and 29 validation origins. See the
+[feasibility plots and controlled results](docs/temperature_oracle_results.md):
+MAE improves modestly, while pooled MASE worsens. January-March 2023 remains
+reserved; the weather experiment represents perfect future weather knowledge.
+The [supplementary suitability diagnostics](docs/temperature_suitability_diagnostics.md)
+add Spearman, stratified associations, mutual information, fixed spline curves
+and saved-model profile permutation importance without refitting the ablation.
+
 Use an explicit configuration for repeatable runs:
 
 | Purpose | Configuration | Initial history | GSP sample |
