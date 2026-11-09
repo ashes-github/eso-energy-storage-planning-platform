@@ -1,7 +1,7 @@
 ﻿# ESO demand-profile research
 
 A reproducible Phase 1 pipeline for Grid Supply Point (GSP) demand-pattern screening
-and GPLVM evaluation, developed from Ashes Roy Chowdhury's 2023 MSc report.
+and GPLVM evaluation.
 
 The pipeline combines explicit low-demand windows with spectral features, then
 compares PCA, an autoencoder and GPLVM variants. Screening labels are uncalibrated
